@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Component)]
-pub struct PowerGaugeText;
+use crate::block::Block;
 
 #[derive(Component)]
 pub struct Nova;
@@ -13,7 +12,8 @@ impl Plugin for NovaPlugin {
         app.add_startup_system(init_nova)
             .add_system(move_nova)
             .add_system(limit_nova_movement)
-            .add_system(update_nova);
+            .add_system(update_nova)
+            .add_system(release_nova);
     }
 }
 
@@ -26,12 +26,12 @@ fn init_nova(
         PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cylinder {
                 radius: 0.4,
-                height: 1.0,
+                height: 0.01,
                 resolution: 100,
                 ..default()
             })),
             material: materials.add(Color::rgba(0.0, 1.0, 0.0, 0.5).into()),
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
+            transform: Transform::from_xyz(0.0, 1.0, 0.0),
             ..default()
         },
         Nova,
@@ -42,9 +42,6 @@ fn update_nova(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut Transf
     if let Ok(mut nova) = query.get_single_mut() {
         if keyboard_input.pressed(KeyCode::Space) {
             nova.scale += Vec3::new(0.25, 0.0, 0.25);
-        }
-        if keyboard_input.just_released(KeyCode::Space) {
-            nova.scale = Vec3::new(1.0, 1.0, 1.0);
         }
     }
 }
@@ -91,6 +88,34 @@ fn limit_nova_movement(mut query: Query<&mut Transform, With<Nova>>) {
             if nova.translation.z > 10.0 {
                 nova.translation.z = 10.0;
             }
+        }
+    }
+}
+
+fn release_nova(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut nova_query: Query<&mut Transform, With<Nova>>,
+    mut block_query: Query<
+        (&mut Transform, &mut Handle<StandardMaterial>),
+        (With<Block>, Without<Nova>),
+    >,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    if let Ok(mut nova) = nova_query.get_single_mut() {
+        if keyboard_input.just_released(KeyCode::Space) {
+            for (mut transform, handle) in &mut block_query {
+                if transform.translation.distance(nova.translation) < nova.scale.x * 0.4 {
+                    if let Some(material) = materials.get_mut(&handle) {
+                        let mut green_color = material.base_color.g() * 1.2;
+                        if green_color > 1.5 {
+                            green_color = 1.5;
+                            transform.scale = Vec3::new(1.0, 2.0, 1.0);
+                        }
+                        material.base_color.set_g(green_color);
+                    }
+                }
+            }
+            nova.scale = Vec3::new(1.0, 1.0, 1.0);
         }
     }
 }
