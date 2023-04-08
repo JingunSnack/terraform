@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::block::Block;
+
 #[derive(Component)]
 pub struct Player;
 
@@ -35,10 +37,11 @@ fn spawn_player(
 
 fn move_player(
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<&mut Transform, With<Player>>,
+    mut player_query: Query<&mut Transform, With<Player>>,
+    block_query: Query<&Transform, (With<Block>, Without<Player>)>,
     time: Res<Time>,
 ) {
-    if let Ok(mut transform) = query.get_single_mut() {
+    if let Ok(mut player_transform) = player_query.get_single_mut() {
         let mut direction = Vec3::ZERO;
 
         if keyboard_input.pressed(KeyCode::W) {
@@ -55,7 +58,18 @@ fn move_player(
         }
 
         if direction.length() > 0.0 {
-            transform.translation += direction.normalize() * 10.0 * time.delta_seconds();
+            let mut speed = 10.0;
+            for block_transform in &block_query {
+                if block_transform.scale.y > 1.0
+                    && player_transform
+                        .translation
+                        .distance(block_transform.translation)
+                        <= 1.2
+                {
+                    speed = 5.0;
+                }
+            }
+            player_transform.translation += direction.normalize() * speed * time.delta_seconds();
         }
     }
 }
