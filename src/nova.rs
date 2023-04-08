@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::block::Block;
+use crate::player::Player;
 
 #[derive(Component)]
 pub struct Nova;
@@ -13,7 +14,8 @@ impl Plugin for NovaPlugin {
             .add_system(move_nova)
             .add_system(limit_nova_movement)
             .add_system(update_nova)
-            .add_system(release_nova);
+            .add_system(release_nova)
+            .add_system(despawn_nova);
     }
 }
 
@@ -116,6 +118,22 @@ fn release_nova(
                 }
             }
             nova.scale = Vec3::new(1.0, 1.0, 1.0);
+        }
+    }
+}
+
+fn despawn_nova(
+    mut commands: Commands,
+    nova_query: Query<Entity, With<Nova>>,
+    player_query: Query<Entity, With<Player>>,
+) {
+    if let Ok(nova_entity) = nova_query.get_single() {
+        match player_query.get_single() {
+            Ok(_) => (),
+            Err(bevy::ecs::query::QuerySingleError::NoEntities(_)) => {
+                commands.entity(nova_entity).despawn_recursive();
+            }
+            Err(bevy::ecs::query::QuerySingleError::MultipleEntities(_)) => (),
         }
     }
 }

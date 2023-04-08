@@ -27,7 +27,8 @@ impl Plugin for EnemyPlugin {
             .add_system(move_enemy)
             .add_system(destory_blocks)
             .add_system(tick_enemy_spawn_timer)
-            .add_system(spawn_enemies_over_time);
+            .add_system(spawn_enemies_over_time)
+            .add_system(kill_player);
     }
 }
 
@@ -62,6 +63,27 @@ fn destory_blocks(
                     None => (),
                 }
                 match commands.get_entity(block_entity) {
+                    Some(c) => c.despawn_recursive(),
+                    None => (),
+                }
+            }
+        }
+    }
+}
+
+fn kill_player(
+    mut commands: Commands,
+    enemy_query: Query<&Transform, With<Enemy>>,
+    player_query: Query<(Entity, &Transform), (With<Player>, Without<Enemy>)>,
+) {
+    if let Ok((player_entity, player_transform)) = player_query.get_single() {
+        for enemy_transform in &enemy_query {
+            if enemy_transform
+                .translation
+                .distance(player_transform.translation)
+                < 1.0
+            {
+                match commands.get_entity(player_entity) {
                     Some(c) => c.despawn_recursive(),
                     None => (),
                 }
