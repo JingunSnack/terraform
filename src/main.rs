@@ -13,6 +13,7 @@ mod player;
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins)
         .add_plugin(WorldInspectorPlugin::new())
         .add_startup_system(setup)
