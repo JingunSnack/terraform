@@ -23,11 +23,7 @@ fn main() {
         .run();
 }
 
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
+fn setup(mut commands: Commands) {
     commands.spawn(Camera3dBundle {
         projection: OrthographicProjection {
             scale: 10.0,
