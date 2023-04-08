@@ -1,10 +1,15 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+
 use block::BlockPlugin;
+use enemy::EnemyPlugin;
 use nova::NovaPlugin;
+use player::PlayerPlugin;
 
 mod block;
+mod enemy;
 mod nova;
+mod player;
 
 fn main() {
     App::new()
@@ -13,6 +18,8 @@ fn main() {
         .add_startup_system(setup)
         .add_plugin(NovaPlugin)
         .add_plugin(BlockPlugin)
+        .add_plugin(PlayerPlugin)
+        .add_plugin(EnemyPlugin)
         .run();
 }
 
@@ -40,27 +47,6 @@ fn setup(
             shadows_enabled: true,
             ..default()
         },
-        ..default()
-    });
-
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 0.20 })),
-        material: materials.add(Color::rgb(1.0, 0.05, 0.05).into()),
-        transform: Transform::from_xyz(1.0, 4.0, 1.0),
-        ..default()
-    });
-
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 0.20 })),
-        material: materials.add(Color::rgb(1.0, 0.05, 0.05).into()),
-        transform: Transform::from_xyz(5.0, 4.0, 1.0),
-        ..default()
-    });
-
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 0.20 })),
-        material: materials.add(Color::rgb(1.0, 0.05, 0.05).into()),
-        transform: Transform::from_xyz(1.0, 4.0, -4.0),
         ..default()
     });
 }
