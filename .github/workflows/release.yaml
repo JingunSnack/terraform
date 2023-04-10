@@ -8,7 +8,7 @@ on:
 env:
   binary: terraform
   add_binaries_to_github_release: true
-  itch_target: https://jingunsnack.itch.io/terraform
+  itch_target: jingunsnack/terraform
 
 
 jobs:
