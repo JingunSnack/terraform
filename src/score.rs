@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::block::Block;
-use crate::GameOver;
+use crate::AppState;
 
 #[derive(Resource)]
 pub struct Score {
@@ -31,17 +31,17 @@ impl Plugin for ScorePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<HighScores>()
             .init_resource::<Score>()
-            .add_system(update_score)
-            .add_system(update_high_scores)
-            .add_system(print_score)
-            .add_system(print_high_scores);
+            .add_systems(
+                (update_score, print_score, print_high_scores).in_set(OnUpdate(AppState::InGame)),
+            )
+            .add_system(update_high_scores.in_schedule(OnEnter(AppState::GameOver)));
     }
 }
 
 fn update_score(
     block_query: Query<&Transform, With<Block>>,
     mut score: ResMut<Score>,
-    mut game_over_event_writer: EventWriter<GameOver>,
+    mut next_state: ResMut<NextState<AppState>>,
 ) {
     let mut total = 0;
     let mut count = 0;
@@ -54,21 +54,14 @@ fn update_score(
     if score.value != count {
         score.value = count;
     }
-    // FIXME: this fires gameover events endlessly...
     if total == count {
-        game_over_event_writer.send(GameOver {})
+        next_state.set(AppState::GameOver);
     }
 }
 
-fn update_high_scores(
-    mut game_over_event_reader: EventReader<GameOver>,
-    score: Res<Score>,
-    mut high_scores: ResMut<HighScores>,
-) {
-    for _ in game_over_event_reader.iter() {
-        println!("game over! score: {}", score.value);
-        high_scores.scores.push(("Player".to_string(), score.value));
-    }
+fn update_high_scores(score: Res<Score>, mut high_scores: ResMut<HighScores>) {
+    println!("game over! score: {}", score.value);
+    high_scores.scores.push(("Player".to_string(), score.value));
 }
 
 fn print_score(score: Res<Score>) {

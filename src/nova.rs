@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use crate::block::Block;
 use crate::player::Player;
+use crate::AppState;
 
 #[derive(Component)]
 pub struct Nova;
@@ -10,15 +11,13 @@ pub struct NovaPlugin;
 
 impl Plugin for NovaPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(init_nova)
-            .add_system(move_nova)
-            .add_system(update_nova)
-            .add_system(release_nova)
-            .add_system(despawn_nova);
+        app.add_system(spawn_nova.in_schedule(OnEnter(AppState::InGame)))
+            .add_systems((move_nova, update_nova, release_nova).in_set(OnUpdate(AppState::InGame)))
+            .add_system(despawn_nova.in_schedule(OnExit(AppState::InGame)));
     }
 }
 
-fn init_nova(
+fn spawn_nova(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -91,18 +90,8 @@ fn release_nova(
     }
 }
 
-fn despawn_nova(
-    mut commands: Commands,
-    nova_query: Query<Entity, With<Nova>>,
-    player_query: Query<Entity, With<Player>>,
-) {
-    if let Ok(nova_entity) = nova_query.get_single() {
-        match player_query.get_single() {
-            Ok(_) => (),
-            Err(bevy::ecs::query::QuerySingleError::NoEntities(_)) => {
-                commands.entity(nova_entity).despawn_recursive();
-            }
-            Err(bevy::ecs::query::QuerySingleError::MultipleEntities(_)) => (),
-        }
+fn despawn_nova(mut commands: Commands, nova_query: Query<Entity, With<Nova>>) {
+    for nova_entity in &nova_query {
+        commands.entity(nova_entity).despawn_recursive();
     }
 }

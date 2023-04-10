@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::AppState;
+
 #[derive(Component)]
 pub struct Block;
 
@@ -7,11 +9,12 @@ pub struct BlockPlugin;
 
 impl Plugin for BlockPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(init_blocks);
+        app.add_system(spawn_blocks.in_schedule(OnEnter(AppState::InGame)))
+            .add_system(despawn_blocks.in_schedule(OnExit(AppState::InGame)));
     }
 }
 
-fn init_blocks(
+fn spawn_blocks(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -28,5 +31,11 @@ fn init_blocks(
                 Block,
             ));
         }
+    }
+}
+
+fn despawn_blocks(mut commands: Commands, block_query: Query<Entity, With<Block>>) {
+    for block_entity in &block_query {
+        commands.entity(block_entity).despawn_recursive();
     }
 }

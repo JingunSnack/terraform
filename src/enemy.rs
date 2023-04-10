@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::block::Block;
 use crate::player::Player;
-use crate::GameOver;
+use crate::AppState;
 
 #[derive(Component)]
 pub struct Enemy;
@@ -25,11 +25,17 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<EnemySpawnTimer>()
-            .add_system(move_enemy)
-            .add_system(destory_blocks)
-            .add_system(tick_enemy_spawn_timer)
-            .add_system(spawn_enemies_over_time)
-            .add_system(kill_player);
+            .add_systems(
+                (
+                    move_enemy,
+                    destory_blocks,
+                    tick_enemy_spawn_timer,
+                    spawn_enemies_over_time,
+                    kill_player,
+                )
+                    .in_set(OnUpdate(AppState::InGame)),
+            )
+            .add_system(despawn_enemies.in_schedule(OnExit(AppState::InGame)));
     }
 }
 
@@ -73,25 +79,18 @@ fn destory_blocks(
 }
 
 fn kill_player(
-    mut commands: Commands,
     enemy_query: Query<&Transform, With<Enemy>>,
-    player_query: Query<(Entity, &Transform), (With<Player>, Without<Enemy>)>,
-    mut game_over_event_writer: EventWriter<GameOver>,
+    player_query: Query<&Transform, (With<Player>, Without<Enemy>)>,
+    mut next_state: ResMut<NextState<AppState>>,
 ) {
-    if let Ok((player_entity, player_transform)) = player_query.get_single() {
+    if let Ok(player_transform) = player_query.get_single() {
         for enemy_transform in &enemy_query {
             if enemy_transform
                 .translation
                 .distance(player_transform.translation)
                 < 1.0
             {
-                match commands.get_entity(player_entity) {
-                    Some(c) => {
-                        c.despawn_recursive();
-                        game_over_event_writer.send(GameOver {})
-                    }
-                    None => (),
-                }
+                next_state.set(AppState::GameOver);
             }
         }
     }
@@ -135,5 +134,11 @@ fn spawn_enemies_over_time(
             },
             Enemy,
         ));
+    }
+}
+
+fn despawn_enemies(mut commands: Commands, enemy_query: Query<Entity, With<Enemy>>) {
+    for enemy_entity in &enemy_query {
+        commands.entity(enemy_entity).despawn_recursive();
     }
 }

@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::block::Block;
+use crate::AppState;
 
 #[derive(Component)]
 pub struct Player;
@@ -9,9 +10,11 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_player)
-            .add_system(move_player)
-            .add_system(confine_player.after(move_player));
+        app.add_system(spawn_player.in_schedule(OnEnter(AppState::InGame)))
+            .add_systems(
+                (move_player, confine_player.after(move_player)).in_set(OnUpdate(AppState::InGame)),
+            )
+            .add_system(despawn_player.in_schedule(OnExit(AppState::InGame)));
     }
 }
 
@@ -90,5 +93,11 @@ fn confine_player(mut query: Query<&mut Transform, With<Player>>) {
                 transform.translation.z = 10.0;
             }
         }
+    }
+}
+
+fn despawn_player(mut commands: Commands, player_query: Query<Entity, With<Player>>) {
+    for player_entity in &player_query {
+        commands.entity(player_entity).despawn_recursive();
     }
 }
