@@ -1,15 +1,18 @@
-use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use block::BlockPlugin;
 use enemy::EnemyPlugin;
+use gameover::GameOverMenuPlugin;
+use menu::MainMenuPlugin;
 use nova::NovaPlugin;
 use player::PlayerPlugin;
 use score::ScorePlugin;
 
 mod block;
 mod enemy;
+mod gameover;
+mod menu;
 mod nova;
 mod player;
 mod score;
@@ -29,6 +32,8 @@ fn main() {
         .add_plugin(WorldInspectorPlugin::new())
         .add_state::<AppState>()
         .add_startup_system(setup)
+        .add_plugin(MainMenuPlugin)
+        .add_plugin(GameOverMenuPlugin)
         .add_plugin(NovaPlugin)
         .add_plugin(BlockPlugin)
         .add_plugin(PlayerPlugin)
@@ -36,7 +41,6 @@ fn main() {
         .add_plugin(ScorePlugin)
         .add_system(in_game)
         .add_system(main_menu)
-        .add_system(exit_game)
         .run();
 }
 
@@ -64,20 +68,22 @@ fn setup(mut commands: Commands) {
     });
 }
 
-fn in_game(keyboard_input: Res<Input<KeyCode>>, mut next_state: ResMut<NextState<AppState>>) {
-    if keyboard_input.just_pressed(KeyCode::G) {
+fn in_game(
+    keyboard_input: Res<Input<KeyCode>>,
+    app_state: Res<State<AppState>>,
+    mut next_state: ResMut<NextState<AppState>>,
+) {
+    if keyboard_input.just_pressed(KeyCode::Return) && app_state.0 != AppState::InGame {
         next_state.set(AppState::InGame);
     }
 }
 
-fn main_menu(keyboard_input: Res<Input<KeyCode>>, mut next_state: ResMut<NextState<AppState>>) {
-    if keyboard_input.just_pressed(KeyCode::M) {
+fn main_menu(
+    keyboard_input: Res<Input<KeyCode>>,
+    app_state: Res<State<AppState>>,
+    mut next_state: ResMut<NextState<AppState>>,
+) {
+    if keyboard_input.just_pressed(KeyCode::Escape) && app_state.0 != AppState::MainMenu {
         next_state.set(AppState::MainMenu);
-    }
-}
-
-fn exit_game(keyboard_input: Res<Input<KeyCode>>, mut app_exit_event_writer: EventWriter<AppExit>) {
-    if keyboard_input.just_pressed(KeyCode::Escape) {
-        app_exit_event_writer.send(AppExit);
     }
 }

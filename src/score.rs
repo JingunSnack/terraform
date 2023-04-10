@@ -14,27 +14,64 @@ impl Default for Score {
     }
 }
 
-#[derive(Resource, Debug)]
-pub struct HighScores {
-    pub scores: Vec<(String, u32)>,
-}
+#[derive(Component)]
+pub struct ScoreUI;
 
-impl Default for HighScores {
-    fn default() -> HighScores {
-        HighScores { scores: Vec::new() }
-    }
-}
+#[derive(Component)]
+pub struct ScoreUIText;
 
 pub struct ScorePlugin;
 
 impl Plugin for ScorePlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<HighScores>()
-            .init_resource::<Score>()
-            .add_systems(
-                (update_score, print_score, print_high_scores).in_set(OnUpdate(AppState::InGame)),
-            )
-            .add_system(update_high_scores.in_schedule(OnEnter(AppState::GameOver)));
+        app.init_resource::<Score>()
+            .add_system(spawn_score_ui.in_schedule(OnEnter(AppState::InGame)))
+            .add_systems((update_score, update_score_ui).in_set(OnUpdate(AppState::InGame)))
+            .add_system(despawn_score_ui.in_schedule(OnExit(AppState::InGame)));
+    }
+}
+
+fn spawn_score_ui(mut commands: Commands, asset_server: Res<AssetServer>, score: Res<Score>) {
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::End,
+                    align_items: AlignItems::Start,
+                    size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                    margin: UiRect {
+                        top: Val::Px(20.0),
+                        right: Val::Px(20.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+                ..default()
+            },
+            ScoreUI,
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                TextBundle::from_section(
+                    format!("Score: {}", score.value),
+                    TextStyle {
+                        font: asset_server
+                            .load("fonts/Caskaydia Cove Nerd Font Complete Mono Bold.otf"),
+                        font_size: 32.0,
+                        color: Color::WHITE,
+                    },
+                )
+                .with_text_alignment(TextAlignment::Center)
+                .with_style(Style { ..default() }),
+                ScoreUIText,
+            ));
+        });
+}
+
+fn despawn_score_ui(mut commands: Commands, score_ui_query: Query<Entity, With<ScoreUI>>) {
+    for score_ui_entity in &score_ui_query {
+        commands.entity(score_ui_entity).despawn_recursive();
     }
 }
 
@@ -59,19 +96,13 @@ fn update_score(
     }
 }
 
-fn update_high_scores(score: Res<Score>, mut high_scores: ResMut<HighScores>) {
-    println!("game over! score: {}", score.value);
-    high_scores.scores.push(("Player".to_string(), score.value));
-}
-
-fn print_score(score: Res<Score>) {
+fn update_score_ui(
+    score: Res<Score>,
+    mut score_ui_text_query: Query<&mut Text, With<ScoreUIText>>,
+) {
     if score.is_changed() {
-        println!("{}", score.value);
-    }
-}
-
-fn print_high_scores(high_scores: Res<HighScores>) {
-    if high_scores.is_changed() {
-        println!("high scores: {:?}", high_scores)
+        if let Ok(mut score_ui_text) = score_ui_text_query.get_single_mut() {
+            score_ui_text.sections[0].value = format!("Score: {}", score.value);
+        }
     }
 }
