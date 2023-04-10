@@ -38,15 +38,25 @@ impl Plugin for ScorePlugin {
     }
 }
 
-fn update_score(block_query: Query<&Transform, With<Block>>, mut score: ResMut<Score>) {
+fn update_score(
+    block_query: Query<&Transform, With<Block>>,
+    mut score: ResMut<Score>,
+    mut game_over_event_writer: EventWriter<GameOver>,
+) {
+    let mut total = 0;
     let mut count = 0;
     for transform in &block_query {
         if transform.scale.y > 1.0 {
             count += 1;
         }
+        total += 1;
     }
     if score.value != count {
         score.value = count;
+    }
+    // FIXME: this fires gameover events endlessly...
+    if total == count {
+        game_over_event_writer.send(GameOver {})
     }
 }
 
