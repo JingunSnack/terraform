@@ -7,7 +7,7 @@ pub struct BlockPlugin;
 
 impl Plugin for BlockPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(init_blocks).add_system(count_blocks);
+        app.add_startup_system(init_blocks);
     }
 }
 
@@ -28,20 +28,5 @@ fn init_blocks(
                 Block,
             ));
         }
-    }
-}
-
-fn count_blocks(block_query: Query<&Transform, With<Block>>) {
-    let mut total = 0;
-    let mut count = 0;
-    for transform in &block_query {
-        total += 1;
-        if transform.scale.y > 1.0 {
-            count += 1;
-        }
-    }
-    // TODO: GameOver (or Win) condition
-    if count == total {
-        println!("{} all are collected", count);
     }
 }

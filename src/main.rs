@@ -5,11 +5,13 @@ use block::BlockPlugin;
 use enemy::EnemyPlugin;
 use nova::NovaPlugin;
 use player::PlayerPlugin;
+use score::ScorePlugin;
 
 mod block;
 mod enemy;
 mod nova;
 mod player;
+mod score;
 
 fn main() {
     App::new()
@@ -21,6 +23,7 @@ fn main() {
         .add_plugin(BlockPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(EnemyPlugin)
+        .add_plugin(ScorePlugin)
         .run();
 }
 
