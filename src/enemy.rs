@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use crate::block::Block;
 use crate::player::Player;
+use crate::GameOver;
 
 #[derive(Component)]
 pub struct Enemy;
@@ -75,6 +76,7 @@ fn kill_player(
     mut commands: Commands,
     enemy_query: Query<&Transform, With<Enemy>>,
     player_query: Query<(Entity, &Transform), (With<Player>, Without<Enemy>)>,
+    mut game_over_event_writer: EventWriter<GameOver>,
 ) {
     if let Ok((player_entity, player_transform)) = player_query.get_single() {
         for enemy_transform in &enemy_query {
@@ -84,7 +86,10 @@ fn kill_player(
                 < 1.0
             {
                 match commands.get_entity(player_entity) {
-                    Some(c) => c.despawn_recursive(),
+                    Some(c) => {
+                        c.despawn_recursive();
+                        game_over_event_writer.send(GameOver {})
+                    }
                     None => (),
                 }
             }

@@ -1,3 +1,4 @@
+use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -13,17 +14,21 @@ mod nova;
 mod player;
 mod score;
 
+pub struct GameOver;
+
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins)
         .add_plugin(WorldInspectorPlugin::new())
         .add_startup_system(setup)
+        .add_event::<GameOver>()
         .add_plugin(NovaPlugin)
         .add_plugin(BlockPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(EnemyPlugin)
         .add_plugin(ScorePlugin)
+        .add_system(exit_game)
         .run();
 }
 
@@ -49,4 +54,10 @@ fn setup(mut commands: Commands) {
         },
         ..default()
     });
+}
+
+fn exit_game(keyboard_input: Res<Input<KeyCode>>, mut app_exit_event_writer: EventWriter<AppExit>) {
+    if keyboard_input.just_pressed(KeyCode::Escape) {
+        app_exit_event_writer.send(AppExit);
+    }
 }
