@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use block::BlockPlugin;
 use enemy::EnemyPlugin;
@@ -29,7 +28,6 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins)
-        .add_plugin(WorldInspectorPlugin::new())
         .add_state::<AppState>()
         .add_startup_system(setup)
         .add_plugin(MainMenuPlugin)
